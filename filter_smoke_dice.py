@@ -3,6 +3,8 @@ import plaidml.keras
 plaidml.keras.install_backend()
 import keras
 
+import requests
+
 import os
 import json
 
@@ -39,11 +41,13 @@ print(tf.keras.__version__)
 print(cv2.__version__)
 
 
-def dice_coef(y_true, y_pred, smooth=1):
+def dice_coef(y_true, y_pred):
     y_true_f = K.flatten(y_true)
-    y_pred_f = K.flatten(y_pred)
-    intersection = K.sum(y_true_f * y_pred_f)
-    return (2. * intersection + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) + smooth)
+    y_pred = K.cast(y_pred, 'float32')
+    y_pred_f = K.cast(K.greater(K.flatten(y_pred), 0.5), 'float32')
+    intersection = y_true_f * y_pred_f
+    score = 2. * K.sum(intersection) / (K.sum(y_true_f) + K.sum(y_pred_f))
+    return score
 
 
 def dice_loss(y_true, y_pred):
@@ -51,8 +55,7 @@ def dice_loss(y_true, y_pred):
     y_true_f = K.flatten(y_true)
     y_pred_f = K.flatten(y_pred)
     intersection = y_true_f * y_pred_f
-    score = (2. * K.sum(intersection) + smooth) / \
-        (K.sum(y_true_f) + K.sum(y_pred_f) + smooth)
+    score = (2. * K.sum(intersection) + smooth) / (K.sum(y_true_f) + K.sum(y_pred_f) + smooth)
     return 1. - score
 
 
@@ -149,6 +152,7 @@ def check_rez(model, path="11.jpg"):
     p_img = infer_image(model, frame)
     image_show(frame)
     image_show(p_img)
+    print(np.mean(p_img), np.median(p_img))
 
 def filter_model(input_shape, kernel_size, n_filters = 3):
 
@@ -162,7 +166,6 @@ def filter_model(input_shape, kernel_size, n_filters = 3):
     model = Model(input_img, output_img)
 
     model.compile(optimizer='adam', loss=bce_dice_loss, metrics=[dice_coef])
-    #model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['acc'])
 
     model.summary()
     return model
@@ -185,38 +188,50 @@ def train_filter(fit_bool, modelname = 'smokefilter_2conv3_11x11x3'):
         x_valid, y_valid = load_data('smoke_valid.csv')
 
         history = smokefilter.fit(x_train, y_train,
-                        epochs = 40,
+                        epochs = 30,
                         batch_size = 2,
                         shuffle = True,
                         validation_data = (x_train, y_train)
                        )
 
-        h5name = modelname + '-weights.h5'
+        h5name = modelname + '-weights_new.h5'
         smokefilter.save_weights(h5name)
     
-        print(history)
-        #return_graf(history)
 
         with open(modelname + '-architecture.json', 'w') as f:
             f.write(smokefilter.to_json())
     else:
-        check_rez(smokefilter, "images/s4/00008_000.jpg")
+        #check_rez(smokefilter, "images/s4/00008_000.jpg")
         #check_rez(smokefilter)
+        
+        video_alerter(smokefilter)
 
+def video_alerter(model):
+    cap = cv2.VideoCapture("./videos/1.mp4"); 
+    #cap = cv2.VideoCapture("./VIDEO.mp4"); 
 
-        #cap = cv2.VideoCapture("./videos/1.mp4"); 
-        #
-        #while(cap.isOpened()):
-        #    ret, frame = cap.read()
-        #    frame = cv2.resize(frame, (640, 360))
-        #    if ret == True:
-        #      p_img = infer_image(smokefilter, frame)*100
-        #      cv2.imshow('Frame',p_img)
-        #      if cv2.waitKey(25) & 0xFF == ord('q'):
-        #        break
-        #    else:
-        #      break
+    count=0
+    while(cap.isOpened()):
+        if(count<30):
+            count+=1
+            ret, frame = cap.read()
+            continue
+        count=0
+        ret, frame = cap.read()
+        frame = cv2.resize(frame, (640, 360))
+        if ret == True:
+          p_img = infer_image(model, frame)*100
+          print(np.mean(p_img), np.median(p_img))
+          if(np.mean(p_img)>0.01 and np.median(p_img)>0.003):
+              r = requests.post('https://discord.com/api/webhooks/909139584435253290/X5dYdb2-7oEm_2LWidxBW5esK5Sb4mix_ztnGWI53moSO7F2cQbU_fM2N4eID75A2QLV ', json={"content": "value"})
+          cv2.imshow('Frame',p_img)
+          if cv2.waitKey(25) & 0xFF == ord('q'):
+            break
+        else:
+          break
 
 
 if __name__ == '__main__':
+    #False для проверки, True обучалка
+    #train_filter(True, 'smokefilter_dice')
     train_filter(False, 'smokefilter_dice')
