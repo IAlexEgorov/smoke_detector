@@ -113,6 +113,8 @@ def filter_model(input_shape, kernel_size, n_filters = 3):
     kernel_tuple = (kernel_size, kernel_size)
 
     x = Conv2D(n_filters, kernel_tuple, activation='relu', padding='same')(input_img)
+    x = Conv2D(n_filters, kernel_tuple, activation='sigmoid', padding='same')(x)
+    x = Conv2D(n_filters, kernel_tuple, activation='relu', padding='same')(x)
     output_img = Conv2D(1, kernel_tuple, activation='sigmoid', padding='same')(x)
 
     model = Model(input_img, output_img)
@@ -146,7 +148,7 @@ def train_filter(fit_bool, modelname = 'smokefilter_2conv3_11x11x3'):
         print(x_train.shape, y_train.shape)
         x_valid, y_valid = load_data('smoke_valid.csv')
         smokefilter.fit(x_train, y_train,
-                        epochs = 20,
+                        epochs = 40,
                         batch_size = 2,
                         shuffle = True,
                         validation_data = (x_train, y_train)
