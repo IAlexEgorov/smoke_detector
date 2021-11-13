@@ -800,7 +800,6 @@
     <Content Include="images\valid\shot0042_mask.png" />
     <Content Include="shot0029.png" />
     <Content Include="shot0037.png" />
-    <Content Include="smoke_test.csv" />
     <Content Include="smoke_train.csv" />
     <Content Include="smoke_valid.csv" />
     <Content Include="VIDEO.mp4" />
