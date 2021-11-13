@@ -1,0 +1,10 @@
+IMAGE,MASK
+
+images/valid/shot0020.png,images/valid/shot0020_mask.png
+images/valid/shot0022.png,images/valid/shot0022_mask.png
+images/valid/shot0031.png,images/valid/shot0031_mask.png
+images/valid/shot0032.png,images/valid/shot0032_mask.png
+images/valid/shot0034.png,images/valid/shot0034_mask.png
+images/valid/shot0035.png,images/valid/shot0035_mask.png
+images/valid/shot0036.png,images/valid/shot0036_mask.png
+images/valid/shot0042.png,images/valid/shot0042_mask.png
