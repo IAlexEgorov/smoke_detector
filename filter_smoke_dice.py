@@ -2,9 +2,9 @@ from matplotlib import pyplot as plt
 import plaidml.keras
 plaidml.keras.install_backend()
 import keras
+
 import telegram
-import requests
-import flask
+
 import os
 import json
 
@@ -12,10 +12,10 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 from sklearn.model_selection import train_test_split
+from pandas import date_range, Series,DataFrame, read_csv, qcut
 
 import cv2
 import numpy as np
-from pandas import date_range, Series,DataFrame, read_csv, qcut
 import random
 import pickle
 import os
@@ -147,7 +147,7 @@ def return_graf(history):
     plt.figure()
     plt.show()
 
-def check_rez(model, path="11.jpg"):
+def check_rez(model, path="1_000.jpg"):
     frame = load_rgb(path)
     frame = cv2.resize(frame, (640, 360))
     p_img = infer_image(model, frame)
@@ -189,52 +189,54 @@ def train_filter(fit_bool, modelname = 'smokefilter_2conv3_11x11x3'):
         x_valid, y_valid = load_data('smoke_valid.csv')
 
         history = smokefilter.fit(x_train, y_train,
-                        epochs = 30,
+                        epochs = 3,
                         batch_size = 2,
                         shuffle = True,
                         validation_data = (x_train, y_train)
                        )
 
-        h5name = modelname + '-weights_new.h5'
+        h5name = modelname + '-weights_newest.h5'
         smokefilter.save_weights(h5name)
 
     else:
-        #check_rez(smokefilter, "images/s4/00008_000.jpg")
+        #check_rez(smokefilter, "./temp/photo.jpg")
         #check_rez(smokefilter)
         video_alerter(smokefilter)
 
 def video_alerter(model):
-    cap = cv2.VideoCapture("./videos/1.mp4"); 
-    #cap = cv2.VideoCapture("./VIDEO.mp4"); 
 
+    cap = cv2.VideoCapture("./videos/2.mp4"); 
+    #cap = cv2.VideoCapture("./VIDEO.mp4"); 
     count=0
     mess_flag=True
-    while(cap.isOpened()):
+    while(True):
         if(count<30):
             count+=1
             ret, frame = cap.read()
             continue
         count=0
         ret, frame = cap.read()
-        frame = cv2.resize(frame, (640, 360))
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         if ret == True:
-          p_img = infer_image(model, frame)*100
-          print(np.mean(p_img), np.median(p_img))
-          if(np.mean(p_img)>0.01 and np.median(p_img)>0.003 and mess_flag==True):
-              cv2.imwrite("./temp/photo.jpg", frame)
-              cv2.imwrite("./temp/mask.jpg", p_img*100)
-              try:
-                  mess_flag=False
-                  bot.sendMessage(chat_id="-1001771472413", text="Внимание! Обнаружено задымление!")
-                  bot.send_photo(chat_id="-1001771472413", photo=open("./temp/photo.jpg", 'rb'))
-                  bot.send_photo(chat_id="-1001771472413", photo=open("./temp/mask.jpg", 'rb'))
-              except:
-                  print("Ожидание доступа")
-          cv2.imshow('Frame',p_img)
-          if cv2.waitKey(25) & 0xFF == ord('q'):
-            break
-        else:
-          break
+            frame = cv2.resize(frame, (640, 360))
+            p_img = infer_image(model, frame)*5
+            print(np.mean(p_img), np.median(p_img))
+            if(np.mean(p_img)>0.01 and np.median(p_img)>0.003 and mess_flag==True):
+                cv2.imwrite("./temp/photo.jpg", frame)
+                cv2.imwrite("./temp/mask.jpg", p_img*5)
+                try:
+                    mess_flag=False
+                    bot.sendMessage(chat_id="-1001771472413", text="Внимание! Обнаружено задымление!")
+                    bot.send_photo(chat_id="-1001771472413", photo=open("./temp/photo.jpg", 'rb'))
+                    bot.send_photo(chat_id="-1001771472413", photo=open("./temp/mask.jpg", 'rb'))
+                except:
+                    print("Ожидание доступа")
+            cv2.imshow('Frame',p_img)
+            if cv2.waitKey(25) & 0xFF == ord('q'):
+                break
+    cap.release()
+    cv2.destroyAllWindows()
+
 
 
 if __name__ == '__main__':
