@@ -51,13 +51,14 @@ def dice_loss(y_true, y_pred):
     score = (2. * K.sum(intersection) + smooth) / \
         (K.sum(y_true_f) + K.sum(y_pred_f) + smooth)
     return 1. - score
+
+def bce_dice_loss(y_true, y_pred):
+    return binary_crossentropy(y_true, y_pred) + dice_loss(y_true, y_pred)
 def load_grayscale(img_path):
     ### for GRAYSCALE # img = np.expand_dims(img, axis=-1)
     img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
     return img
 
-def bce_dice_loss(y_true, y_pred):
-    return binary_crossentropy(y_true, y_pred) + dice_loss(y_true, y_pred)
 
 
 def load_data(csv_file):
@@ -140,15 +141,16 @@ def train_filter(fit_bool, modelname = 'smokefilter_2conv3_11x11x3'):
 
     smokefilter = filter_model(input_shape, kernel_size, 3)
 
-    h5name = modelname + '-weights.h5'                                                                         
+    h5name = modelname + '-weights_newest.h5'                                                                         
     smokefilter.load_weights(h5name)
 
     if(fit_bool==True):
         x_train, y_train = load_data('smoke_train.csv')
         print(x_train.shape, y_train.shape)
         x_valid, y_valid = load_data('smoke_valid.csv')
+
         smokefilter.fit(x_train, y_train,
-                        epochs = 40,
+                        epochs = 10,
                         batch_size = 2,
                         shuffle = True,
                         validation_data = (x_train, y_train)
@@ -159,19 +161,23 @@ def train_filter(fit_bool, modelname = 'smokefilter_2conv3_11x11x3'):
         with open(modelname + '-architecture.json', 'w') as f:
             f.write(smokefilter.to_json())
     else:
-        cap = cv2.VideoCapture("./videos/2.mp4"); 
-        cap.set(3,1280) 
-        cap.set(4,700)  
+        frame = load_rgb("images/train/shot0015.png")
+        p_img = infer_image(smokefilter, frame)
+        image_show(frame)
+        image_show(p_img)
+        #cap = cv2.VideoCapture("./videos/2.mp4"); 
+        #cap.set(3,1280) 
+        #cap.set(4,700)  
 
-        while(cap.isOpened()):
-            ret, frame = cap.read()
-            if ret == True:
-              p_img = infer_image(smokefilter, frame)*100
-              cv2.imshow('Frame',p_img)
-              if cv2.waitKey(25) & 0xFF == ord('q'):
-                break
-            else:
-              break
+        #while(cap.isOpened()):
+        #    ret, frame = cap.read()
+        #    if ret == True:
+        #      p_img = infer_image(smokefilter, frame)*100
+        #      cv2.imshow('Frame',p_img)
+        #      if cv2.waitKey(25) & 0xFF == ord('q'):
+        #        break
+        #    else:
+        #      break
 
 
 if __name__ == '__main__':
