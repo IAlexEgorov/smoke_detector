@@ -140,6 +140,7 @@ def train_filter(fit_bool, modelname = 'smokefilter_2conv3_11x11x3'):
     kernel_size = 11
 
     smokefilter = filter_model(input_shape, kernel_size, 3)
+     
 
     h5name = modelname + '-weights_newest.h5'                                                                         
     smokefilter.load_weights(h5name)
@@ -150,7 +151,7 @@ def train_filter(fit_bool, modelname = 'smokefilter_2conv3_11x11x3'):
         x_valid, y_valid = load_data('smoke_valid.csv')
 
         smokefilter.fit(x_train, y_train,
-                        epochs = 10,
+                        epochs = 2,
                         batch_size = 2,
                         shuffle = True,
                         validation_data = (x_train, y_train)
