@@ -2,9 +2,9 @@ from matplotlib import pyplot as plt
 import plaidml.keras
 plaidml.keras.install_backend()
 import keras
-
+import telegram
 import requests
-
+import flask
 import os
 import json
 
@@ -40,6 +40,7 @@ print(tf.__version__)
 print(tf.keras.__version__)
 print(cv2.__version__)
 
+bot = telegram.Bot(token="2142849589:AAH8ooPg-xBxvuotJGSYuUNhaGQBJyvmADs")
 
 def dice_coef(y_true, y_pred):
     y_true_f = K.flatten(y_true)
@@ -196,14 +197,10 @@ def train_filter(fit_bool, modelname = 'smokefilter_2conv3_11x11x3'):
 
         h5name = modelname + '-weights_new.h5'
         smokefilter.save_weights(h5name)
-    
 
-        with open(modelname + '-architecture.json', 'w') as f:
-            f.write(smokefilter.to_json())
     else:
         #check_rez(smokefilter, "images/s4/00008_000.jpg")
         #check_rez(smokefilter)
-        
         video_alerter(smokefilter)
 
 def video_alerter(model):
@@ -211,6 +208,7 @@ def video_alerter(model):
     #cap = cv2.VideoCapture("./VIDEO.mp4"); 
 
     count=0
+    mess_flag=True
     while(cap.isOpened()):
         if(count<30):
             count+=1
@@ -222,8 +220,16 @@ def video_alerter(model):
         if ret == True:
           p_img = infer_image(model, frame)*100
           print(np.mean(p_img), np.median(p_img))
-          if(np.mean(p_img)>0.01 and np.median(p_img)>0.003):
-              r = requests.post('https://discord.com/api/webhooks/909139584435253290/X5dYdb2-7oEm_2LWidxBW5esK5Sb4mix_ztnGWI53moSO7F2cQbU_fM2N4eID75A2QLV ', json={"content": "value"})
+          if(np.mean(p_img)>0.01 and np.median(p_img)>0.003 and mess_flag==True):
+              cv2.imwrite("./temp/photo.jpg", frame)
+              cv2.imwrite("./temp/mask.jpg", p_img*100)
+              try:
+                  mess_flag=False
+                  bot.sendMessage(chat_id="-1001771472413", text="Внимание! Обнаружено задымление!")
+                  bot.send_photo(chat_id="-1001771472413", photo=open("./temp/photo.jpg", 'rb'))
+                  bot.send_photo(chat_id="-1001771472413", photo=open("./temp/mask.jpg", 'rb'))
+              except:
+                  print("Ожидание доступа")
           cv2.imshow('Frame',p_img)
           if cv2.waitKey(25) & 0xFF == ord('q'):
             break
@@ -235,3 +241,5 @@ if __name__ == '__main__':
     #False для проверки, True обучалка
     #train_filter(True, 'smokefilter_dice')
     train_filter(False, 'smokefilter_dice')
+   
+    
