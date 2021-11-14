@@ -27,12 +27,20 @@
 1) развертывание сервиса производится на Windows 10, либо так же для Linux Ubuntu;
 2) требуется установленный python с поддержкой c библиотеками из файла requirements.txt;
 
-Установка:
+	
+Установка (для Ubuntu):
 	
 	sudo apt-get update
 	sudo apt-get upgrade
-
+	sudo apt install python3.9
+	
 	git clone https://github.com/Sinclear/default_readme
 	cd default_readme
 	
 	pip install -r requirements.txt
+
+Установка (для Windows):
+	
+	1. Установка интерпретатора python с оффициального сайта
+	2. Скачивание архива данного репозитория 
+	3. Запуск файла 
