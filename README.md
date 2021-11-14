@@ -1,4 +1,4 @@
-# hackaton_domohozyaiki_network
+# smoke_detector
 <h4>Функциональность:</h4>
 <ul>
 <ul>
